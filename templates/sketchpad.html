@@ -1,0 +1,62 @@
+
+
+<style>
+	canvas{
+		position:relative;
+	}
+</style>
+
+<canvas id="drawing-pad" width='500' height='400'>
+	
+</canvas>
+<script src="static/javascript/jquery-1.6.min.js"></script>
+<script>
+	var Game={
+		//indicates if it is drawing now
+		isDrawing:false,
+		//the starting point of next line drawing
+		startX:0,
+		startY:0,
+	}
+	
+	//canvas context
+	var canvas=document.getElementById('drawing-pad');
+	var ctx = canvas.getContext('2d');
+	
+	$(function(){
+		$('#drawing-pad').mousedown(function(e){
+			//get the mouse x and y relative to the canvas top-left point
+			var mouseX=e.layerX||0;
+			var mouseY=e.layerY||0;
+			
+			Game.startX=mouseX;
+			Game.startY=mouseY;
+			
+			Game.isDrawing=true;
+		});
+		$('#drawing-pad').mousemove(function(e){
+			//draw line when is drawing
+			if(Game.isDrawing){
+				//get the mouse x and y relative to the canvas top left point
+				var mouseX=e.layerX||0;
+				var mouseY=e.layerY||0;
+				if(!(mouseX==Game.startX&&mouseY==Game.startY)){
+					drawLine(ctx,Game.startX,Game.startY,mouseX,mouseY,1);
+					Game.startX=mouseX;
+					Game.startY=mouseY;
+				}
+			}
+		});
+		$('#drawing-pad').mouseup(function(e){
+			Game.isDrawing=false;
+		});
+	})
+	function drawLine(ctx,x1,y1,x2,y2,thickness){
+		ctx.beginPath();
+		ctx.moveTo(x1,y1);
+		ctx.lineTo(x2,y2);
+		ctx.lineWidth=thickness;
+		ctx.strokeStyle="#444";
+		ctx.stroke();
+	}
+</script>

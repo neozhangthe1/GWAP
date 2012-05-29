@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Drawing Circles in Canvas</title>
+		<style>
+			canvas{
+				background:#333;
+			}
+			#game{
+				position:relative;
+			}
+			#pool{
+				width:100px;
+				height:260px;
+				line-height:1.4;
+				background-color:gray;
+				text-align:center;
+				text-shadow:-1px -1px #bbb;
+				float:left;
+			}
+			.labelBox{width:500px; padding-left:20px; float:left;}
+			.label{padding:10px; margin-bottom:5px; border:2px dashed #ccc; background-color:#eee; cursor:move;}
+			.label:hover{border-color:#cad5eb; background-color:#f0f3f9;}
+			.dragremind{padding-top:2em; clear:both;}
+		</style>
+	</head>
+	<body>
+		<header>
+			<h1>Drawing in Canvas</h1>
+		</header>
+		
+		<div id="pool" width="768" height="400">
+			Sorry, your web browser does not support Canvas content.
+		</div>
+		
+		<div class="labelBox">
+			<div class="label" title="label" draggable="true">l1</div>
+			<div class="label" title="label" draggable="true">l2</div>
+			<div class="label" title="label" draggable="true">l3</div>
+			<div class="label" title="label" draggable="true">l4</div>
+			<div class="label" title="label" draggable="true">l5</div>
+		</div>
+		<div class="dragremind"></div>
+		
+		<script src="static/javascript/jquery-1.6.min.js"></script>
+		<script>
+			var elePool=$("#pool");
+			var eleLabels=$(".label");
+			var numLabels=eleLabels.length;
+			var eleRemind=$(".dragremind")[0];
+			var eleDrag=null;
+			for(var i=0; i<numLabels;i++){
+				eleLablels[i].onselectstart=function(){
+					return false;
+				}
+				eleLabels[i].ondragstart=function(event){
+					//drag start
+					event.dataTransfer.effectAllowed="move";
+					event.dataTransfer.setData("text",event.target.innerHTML);
+					event.dataTransfer.setDragImage(event.target,0,0);
+					eleDrag=event.target;
+					return true;
+				}
+				eleLabels[i].ondragend=function(event){
+					//drag finish
+					event.dataTransfer.clearData("text");
+					eleDrag=null;
+					return false;
+				}
+			}
+			elePool.ondragover=function(event){
+				event.preventDefault();
+				return true;
+			}
+			elePool.ondragenter=function(event){
+				this.style.color="#ffffff";
+				return true;	
+			}
+			elePool.ondrop=function(event){
+			    if (eleDrag) {
+			        eleRemind.innerHTML = '<strong>"' + eleDrag.innerHTML + '"</strong>±ª»”Ω¯¡À¿¨ª¯œ‰';
+			        eleDrag.parentNode.removeChild(eleDrag);
+			    }
+			    this.style.color = "#000000";
+			    return false;
+			}
+		</script>
+	</body>
+</html>

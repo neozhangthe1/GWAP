@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Untitled Document</title>
+		<style type="text/css">
+			#maps{
+				width:500px;
+				height:300px;
+				background:#f9f9f9;
+				border:1px solid #c6c6c6;
+				margin:10px auto;
+				position:relative;
+			}
+			div.point{
+				position:absolute;
+				width:12px;
+				height:12px;
+				background:url(stone.gif) no-repeat;
+			}
+			div.svgCotainer{
+				position:absolute;
+			}
+			#mapPloy{
+				position:absolute;
+			}
+			#info{
+				position:absolute;
+				top:10px;
+				right:10px;
+				width:100px;
+				height:25px;
+				background:#ecf6fc;
+				border:1px solid #8ad0fd;
+				font-size:14px;
+				font-family:Arial, Helvetica, sans-serif;
+				color:#51a961;
+				text-align:center;
+				line-height:25px;
+			}
+		</style>
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/svg.js"></script>
+		<script type="text/javascript">
+		$(document).ready(function(){
+			$('#maps').click(function(e){
+				var left=e.pageX;
+				var top=e.pageY;
+				var o={
+					left:left,
+					top:top
+				}
+				//Ploy.addPoint(top,left);
+				//Ploy.makeSvgContainer();
+			    var lengths=Ploy.makePoly('#maps',o);
+				lengths=(Math.round(lengths*100))/100;
+				$('#info').html(lengths+'Km');
+			})
+		});
+		//return array's max
+        Array.prototype.max = function(){
+            return Math.max.apply({}, this);
+        }
+		//return array's min
+        Array.prototype.min = function(){
+            return Math.min.apply({}, this);
+        }
+		var options={
+			cssClickClass:'point',//点击时生成点的类
+			svgCtnCls:'svgContainer',//svg容器的类
+			wapper:'#maps',
+			scale:'1'
+		};
+		var Ploy={
+			getData:function(){
+				var arrayTop=[];
+				var arrayLeft=[];
+				var el=$('div.'+options.cssClickClass);
+				$.each(el,function(i,n){
+					var pointTop=$(n).position().top;
+					var pointLeft=$(n).position().left;
+					arrayTop.push(pointTop);
+					arrayLeft.push(pointLeft);
+				});
+				var minTop=arrayTop.min();
+				var maxTop=arrayTop.max();
+				var minLeft=arrayLeft.min();
+				var maxLeft=arrayLeft.max();
+				var svgWidth=maxLeft-minLeft+el.width();
+				var svgHeight=maxTop-minTop+el.height();
+				return {
+					w:svgWidth,
+					h:svgHeight,
+					minTop:minTop,
+					minLeft:minLeft,
+					elWidth:el.width(),
+					elHeight:el.height()
+				}
+			},
+			makeSvgContainer:function(){
+				var s=this;
+				var datas=s.getData();
+				var div=$('#mapPloy').is('div');
+				if(!div){
+					var svgContainer=$('<div/>')
+								 .attr('id','mapPloy')
+								 .addClass(options.svgCtnCls)
+								 .css({
+								 	width:datas.w,
+									height:datas.h,
+									top:datas.minTop+datas.elHeight/2,
+									left:datas.minLeft+datas.elWidth/2
+					}).prependTo($(options.wapper));
+				}else{
+					$('#mapPloy').css({
+						width:datas.w,
+						height:datas.h,
+						top:datas.minTop+datas.elHeight/2,
+						left:datas.minLeft+datas.elWidth/2
+					})
+				}
+			},
+			//添加点在地图区域中
+			addPoint:function(top,left){
+				var wapper=$(options.wapper);
+				var t=wapper.offset().top;
+				var l=wapper.offset().left;
+				var pt=top-t;
+				var pl=left-l;
+				var point=$('<div/>').addClass(options.cssClickClass)
+									 .css({
+									 	top:pt,
+										left:pl,
+										poisiton:'absolute'
+									 })
+									 .appendTo(wapper);
+			},
+			makePoly:function(el,o){
+				var s=this;
+				s.addPoint(o.top,o.left);
+				s.makeSvgContainer();
+				//清空svg，重新画图
+				$(el).find('div.'+options.svgCtnCls).empty();
+				//遍历已经有的点，做出路线
+				var points=$('div.'+options.cssClickClass);
+				var datas=s.getData();
+				//生成路径
+				var path=""
+				$.each(points,function(i,n){
+					if(i==0){
+						path+="M";
+					}else{
+						path+="L";
+					}
+					var leftInSvg=$(n).position().left-datas.minLeft;
+					var TopInSvg=$(n).position().top-datas.minTop;
+                    path += leftInSvg;
+                    path += ",";
+                    path += TopInSvg;
+                    path += " ";
+				});
+				var ploy = Raphael('mapPloy', datas.w, datas.h);
+				var pathslength=ploy.path(path).attr({
+					stroke:'#1791fc', 
+					'stroke-width':3,
+					opacity:.7, 
+					fill:"none"});
+				//计算距离
+				return pathslength.getTotalLength()*options.scale;
+			}	
+		}
+		</script>
+	</head>
+	<body>
+		<div id="maps">
+			<div id="info">
+			</div>
+			
+		</div>
+		
+	</body>
+</html>

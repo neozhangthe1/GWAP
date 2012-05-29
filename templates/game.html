@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0063)http://www.zhangxinxu.com/study/201102/html5-drag-and-drop.html -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+		<title>GWAP</title>
+		<style>
+			canvas {
+				position: relative;
+				z-index: 2;
+				float:left;
+			}
+			.dustbin {
+				width: 700px;
+				height: 360px;
+			}
+			.dragbox {
+				width: 100px;
+				padding-left: 20px;
+				float:right;
+			}
+			.draglist {
+				padding: 10px;
+				margin-bottom: 5px;
+				border: 2px dashed #ccc;
+				background-color: #eee;
+				cursor: move;
+			}
+			.draglist:hover {
+				border-color: #cad5eb;
+				background-color: #f0f3f9;
+			}
+			.dragremind {
+				padding-top: 2em;
+				clear: both;
+			}
+		</style>
+		<!-- style="background: url(static/image/Desert.jpg);" -->
+		<body>
+
+			<canvas id="mainScene" width="700" height="400">
+				Sorry, your web browser does not support Canvas content.
+			</canvas>
+			<svg xmlns="http://www.w3.org/2000/svg" width="700" height="400" version="1.1" id="svg" style="position:relative;z-index:1;opacity:1;">
+			</svg>
+			<img src="static/image/Desert.jpg" width="768" height="400" style="{z-index:0;}" id="mapImage" />
+			<map name="map" id="map">
+				<area id="areaCircle" shape="circle" coords="75,75,10"  href="#" />
+			</map>
+			<div class="dragbox">
+				<div class="draglist" title="label" draggable="true">
+					label1
+				</div>
+				<div class="draglist" title="label" draggable="true">
+					label2
+				</div>
+				<div class="draglist" title="label" draggable="true">
+					label3
+				</div>
+				<div class="draglist" title="label" draggable="true">
+					label4
+				</div>
+				<div class="draglist" title="label" draggable="true">
+					label5
+				</div>
+				<div class="draglist" title="label" draggable="true">
+					label6
+				</div>
+			</div>
+			<div class="dragremind"></div>
+
+			<script src="static/javascript/jquery-1.6.min.js"></script>
+			<script>
+				var Game = {
+					phase : 0, //0:segmentation 1:labeling
+					drawing : 0, //0:mouse dragging
+					dragging : 0,
+					current_circle : null,
+					circles : [],
+					labels : [],
+				}
+
+				function Circle(x, y) {
+					this.startX = x;
+					this.startY = y;
+					this.endX = x;
+					this.endY = y;
+					this.highlight=false;
+
+					this.radius = function() {
+						var radius = Math.sqrt(Math.pow(this.startX - this.endX, 2) + Math.pow(this.startY - this.endY, 2));
+						return radius / 2;
+					}
+
+					this.centerX = function() {
+						return (this.startX + this.endX) / 2;
+					}
+					this.centerY = function() {
+						return (this.startY + this.endY) / 2;
+					}
+
+					this.update = function(x, y) {
+						this.endX = x;
+						this.endY = y;
+					}
+
+					this.insideCheck = function(x, y) {
+						var distance = Math.sqrt(Math.pow(x - this.centerX(), 2), Math.pow(y - this.centerY(), 2));
+						return distance <= this.radius();
+					}
+				}
+
+				function Label(user, circle, content) {
+					this.user = user;
+					this.circle = circle;
+					this.content = content;
+				}
+				
+				function SvgEvent(){
+					this.addCircle=function(x,y,r){
+						$("#svg").append(
+							'<circle class="section" cx="'+x+'" cy="'+y+'" r="'+r+'" stroke="black" stroke-width="2" style="cursor:pointer;opacity:1;"/>'
+						);
+						$(".section").click(function(){
+							alert("click");
+						});
+					
+					}
+				}
+
+				var canvas = document.getElementById('mainScene');
+				var ctx = canvas.getContext('2d');
+
+				var img = new Image();
+				img.src = "static/image/Desert.jpg";
+				img.onload = function() {
+					ctx.drawImage(img, 0, 0, 400, 300);
+				}
+				
+				var Svg=new SvgEvent();
+				
+				function drawCircle(ctx, circle) {
+					//(X,Y)->center
+					//radius->distance between the center point and the arc perimeter
+					//startAngle
+					//endAngle
+					//counter-clockwise
+					if(circle.highlight)
+						ctx.strokeStyle="white";
+					else
+						ctx.strokeStyle = "black";
+					ctx.beginPath();
+					ctx.arc(circle.centerX(), circle.centerY(), circle.radius(), 0, Math.PI * 2, true);
+					ctx.closePath();
+					ctx.stroke();
+				}
+				
+				function drawCirclexyr(ctx, x, y, radius) {
+					ctx.beginPath();
+					ctx.arc(x, y, radius, 0, Math.PI * 2, true);
+					ctx.closePath();
+					ctx.stroke();
+				}
+
+				//page ready
+				$(function() {
+					//svg
+					$("#svg").offset({
+						top : $("#mainScene").offset().top,
+						left : $("#mainScene").offset().left
+					})
+
+					//map image to canvas
+					$("#mapImage").offset({
+						top : $("#mainScene").offset().top,
+						left : $("#mainScene").offset().left
+					});
+
+					//mouse clicked on the canvas
+					$("#mainScene").mousedown(function(e) {
+						if(Game.phase == 0) {
+							Game.drawing = 1;
+							//var canvasPosition=$(this).offset();
+							var x = e.layerX || 0;
+							var y = e.layerY || 0;
+							//drawCircle(ctx,x,y,0);
+							Game.current_circle = new Circle(x, y);
+							//Game.circles.push(new Circle(x,y,0));
+						}
+					});
+
+					$(".dragbox").offset({
+						top : $("#mainScene").offset().top,
+						left : $("#mainScene").offset().left+750
+					})
+					//mouse move
+					$("#mainScene").mousemove(function(e) {
+						console.log("dragging",Game);
+						var x = e.layerX || 0;
+						var y = e.layerY || 0;
+						if(Game.phase == 0 && Game.drawing == 1) {
+							drawCirclexyr(ctx, x, y, 3);
+							Game.current_circle.update(x, y);
+						}
+						if(Game.dragging == 1) {
+							console.log("dragging",Game);
+							for(var i = 0; i < Game.circles.length; i++) {
+								if(Game.circles[i].insideCheck(x,y)){
+									console.log("hit",Game);
+									Game.circles[i].highlight=true;
+									break;
+								}
+							}
+						}
+					});
+
+					//mouse up
+					$("#mainScene").mouseup(function(e) {
+						if(Game.phase == 0 && Game.drawing == 1) {
+							var canvasPosition = $(this).offset();
+							var x = e.layerX || 0;
+							var y = e.layerY || 0;
+
+							Game.current_circle.update(x, y);
+							Game.drawing = 0
+							//Game.circles.push(Game.current_circle);
+							Svg.addCircle(x,y,Game.current_circle.radius());
+							Game.current_circle = null;
+					
+						}
+					});
+					
+					$(document).mousemove(function(e){
+						if(Game.dragging == 1) {
+							console.log("doc dragging",Game);
+							for(var i = 0; i < Game.circles.length; i++) {
+								if(Game.circles[i].insideCheck(x,y)){
+									console.log("hit",Game);
+									Game.circles[i].highlight=true;
+									break;
+								}
+							}
+						}
+					});
+					
+					//set main loop
+					//setInterval(mainLoop, 30);
+				});
+
+				function clear(ctx) {
+					ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+				}
+
+				function drawScene() {
+					clear(ctx);
+					if(Game.current_circle != null)
+						drawCircle(ctx, Game.current_circle);
+					for(var i = 0; i < Game.circles.length; i++) {
+						drawCircle(ctx, Game.circles[i]);
+					}
+				}
+
+				function mainLoop() {
+					drawScene();
+				}
+
+				var eleDustbin = $("#mainScene")[0], eleDrags = $(".draglist"), lDrags = eleDrags.length, eleRemind = $(".dragremind")[0], eleDrag = null;
+				for(var i = 0; i < lDrags; i += 1) {
+					eleDrags[i].onselectstart = function() {
+						return false;
+					};
+					eleDrags[i].ondragstart = function(ev) {
+						Game.dragging = 1;
+						ev.dataTransfer.effectAllowed = "move";
+						ev.dataTransfer.setData("text", ev.target.innerHTML);
+						ev.dataTransfer.setDragImage(ev.target, 0, 0);
+						eleDrag = ev.target;
+						return true;
+					};
+					eleDrags[i].ondragend = function(ev) {
+						Game.dragging = 0;
+						ev.dataTransfer.clearData("text");
+						eleDrag = null;
+						return false
+					};
+				}
+				eleDustbin.ondragover = function(ev) {
+					ev.preventDefault();
+					return true;
+				};
+
+				eleDustbin.ondragenter = function(ev) {
+					var x = ev.layerX || 0;
+					var y = ev.layerY || 0;
+					this.style.color = "#ffffff";
+					return true;
+				};
+				eleDustbin.ondrop = function(ev) {
+					if(eleDrag) {
+						eleRemind.innerHTML = '<strong>"' + eleDrag.innerHTML + '"</strong>drop';
+						eleDrag.parentNode.removeChild(eleDrag);
+					}
+					this.style.color = "#000000";
+					return false;
+				};
+			</script>
+
+		</body>

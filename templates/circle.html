@@ -1,0 +1,51 @@
+<!DOCTYPE>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>无标题文档</title>
+<style type="text/css">
+*{padding:0px; margin:0px;}
+html{height:100%;}
+body{height:100%;}
+#shoot{width:100%; height:100%; background:#FFC; text-align:center; line-height:60px;}
+</style>
+<script type="text/javascript">
+        var x,y;
+            window.setInterval( "show()",500)
+     function show(){
+           window.addEventListener("mousemove",cs,false);
+           window.onclick= pao;
+             var z=Math.random()*50;M=Math.random();
+            var canvas=document.getElementById("show");
+            var context=canvas.getContext('2d');
+            context.save();
+            context.beginPath();
+            context.arc(x-260,y,z,0,Math.PI*2,true);
+            context.closePath();
+            context.strokeStyle="rgba(143,9,9,"+M+")";
+            context.lineWidth=3;
+            context.stroke();
+            context.restore();
+     }
+     function pao(){window.setInterval( "changetop()",500)}
+    function cs(event){
+        var e=event||window.event;
+        x=e.clientX;
+        y=e.clientY;
+        }
+   function changetop(){
+       if(y>0){
+           y=y-1
+           }
+           else if(y<0){y=y+1}
+         }
+</script>
+</head>
+<body>
+    <div id="shoot">
+        <canvas id="show" width="1400px" height="800px">
+             抱歉！您的浏览器不支持html5的canvasAPI，请更换浏览器查看！
+        </canvas>
+    </div>
+</body>
+</html>

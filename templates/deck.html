@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>CSS3 Transition</title>
+		<link rel="stylesheet" href="static/css/css3transition.css" />
+		
+		<style>
+			body{
+				background:#aaa;
+			}
+			.card{
+				width:80px;
+				height:120px;
+				margin:20px;
+				background:#efefef;
+				position:absolute;
+				-webkit-transition:all 1s linear;
+			}
+			
+			.cardAK{
+				background:url(static/image/AK.png);
+			}
+			.cardAQ{
+				background:url(static/image/AQ.png);
+			}
+			.rotateRight{
+				-webkit-transform:rotate3d(0,0,1,90deg);
+			}
+			.moveAndScale{
+				-webkit-transform:translate3d(150px,150px,0) scale3d(1.5,1.5,1);
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<h1>CSS3 Transition</h1>
+		</header>
+		
+		<section id="game">
+			<div id="cards">
+				<div id="card1" class="card cardAK"></div>
+				<div id="card2" class="card cardAQ"></div>
+			</div>
+		</section>
+		
+		<footer>
+			<p>This is an example of transitioning cards</p>
+		</footer>
+		
+		<script src="static/javascript/jquery-1.4.4.min.js"></script>
+		<script>
+			$(function(){
+				$("#card1").addClass("moveAndScale");
+				$("#card2").addClass("rotateRight");
+			});
+		</script>
+	</body>
+</html>
