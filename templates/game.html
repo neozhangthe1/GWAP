@@ -42,8 +42,8 @@
 			<canvas id="mainScene" width="700" height="400">
 				Sorry, your web browser does not support Canvas content.
 			</canvas>
-			<svg xmlns="http://www.w3.org/2000/svg" width="700" height="400" version="1.1" id="svg" style="position:relative;z-index:1;opacity:1;">
-			</svg>
+	<!-- 		<svg xmlns="http://www.w3.org/2000/svg" width="700" height="400" version="1.1" id="svg" style="position:relative;z-index:1;opacity:1;">
+			</svg> -->
 			<img src="static/image/Desert.jpg" width="768" height="400" style="{z-index:0;}" id="mapImage" />
 			<map name="map" id="map">
 				<area id="areaCircle" shape="circle" coords="75,75,10"  href="#" />
@@ -79,6 +79,7 @@
 					current_circle : null,
 					circles : [],
 					labels : [],
+					incircle:-1,
 				}
 
 				function Circle(x, y) {
@@ -108,6 +109,10 @@
 					this.insideCheck = function(x, y) {
 						var distance = Math.sqrt(Math.pow(x - this.centerX(), 2), Math.pow(y - this.centerY(), 2));
 						return distance <= this.radius();
+					}
+					
+					this.distance = function(x,y){
+						return Math.sqrt(Math.pow(x - this.centerX(), 2), Math.pow(y - this.centerY(), 2));
 					}
 				}
 
@@ -203,16 +208,6 @@
 							drawCirclexyr(ctx, x, y, 3);
 							Game.current_circle.update(x, y);
 						}
-						if(Game.dragging == 1) {
-							console.log("dragging",Game);
-							for(var i = 0; i < Game.circles.length; i++) {
-								if(Game.circles[i].insideCheck(x,y)){
-									console.log("hit",Game);
-									Game.circles[i].highlight=true;
-									break;
-								}
-							}
-						}
 					});
 
 					//mouse up
@@ -224,29 +219,42 @@
 
 							Game.current_circle.update(x, y);
 							Game.drawing = 0
-							//Game.circles.push(Game.current_circle);
-							Svg.addCircle(x,y,Game.current_circle.radius());
+							Game.circles.push(Game.current_circle);
+							//Svg.addCircle(x,y,Game.current_circle.radius());
 							Game.current_circle = null;
 					
 						}
 					});
 					
-					$(document).mousemove(function(e){
-						if(Game.dragging == 1) {
-							console.log("doc dragging",Game);
-							for(var i = 0; i < Game.circles.length; i++) {
-								if(Game.circles[i].insideCheck(x,y)){
-									console.log("hit",Game);
-									Game.circles[i].highlight=true;
-									break;
-								}
-							}
-						}
-					});
-					
 					//set main loop
-					//setInterval(mainLoop, 30);
+					setInterval(mainLoop, 30);
 				});
+				
+				function insideCheck(x,y){
+					var closest=0;
+					var insideList=[];
+					Game.incircle=-1;
+
+					for(var i = 0; i < Game.circles.length; i++) {
+						Game.circles[i].highlight=false;
+						if(Game.circles[i].insideCheck(x,y)){
+							console.log("hit",Game.circles[i],x,y);
+							insideList.push(i);
+							//Game.circles[i].highlight=true;
+							//break;
+						}
+					}
+					if(insideList.length>0){
+						closest=insideList[0];
+						for(var i=0;i<insideList.length;i++){
+							if(Game.circles[insideList[i]].distance(x,y)<Game.circles[closest].distance(x,y))
+								closest=insideList[i];
+						}
+						Game.incircle=closest;
+						Game.circles[closest].highlight=true;
+					}						
+					return true;
+				}
 
 				function clear(ctx) {
 					ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -265,7 +273,11 @@
 					drawScene();
 				}
 
-				var eleDustbin = $("#mainScene")[0], eleDrags = $(".draglist"), lDrags = eleDrags.length, eleRemind = $(".dragremind")[0], eleDrag = null;
+				var eleDustbin = $("#mainScene")[0], 
+				eleDrags = $(".draglist"), 
+				lDrags = eleDrags.length, 
+				eleRemind = $(".dragremind")[0], 
+				eleDrag = null;
 				for(var i = 0; i < lDrags; i += 1) {
 					eleDrags[i].onselectstart = function() {
 						return false;
@@ -287,7 +299,8 @@
 				}
 				eleDustbin.ondragover = function(ev) {
 					ev.preventDefault();
-					return true;
+					console.log("dragging",Game);
+					insideCheck(ev.offsetX,ev.offsetY);
 				};
 
 				eleDustbin.ondragenter = function(ev) {
@@ -296,10 +309,15 @@
 					this.style.color = "#ffffff";
 					return true;
 				};
+				
 				eleDustbin.ondrop = function(ev) {
 					if(eleDrag) {
-						eleRemind.innerHTML = '<strong>"' + eleDrag.innerHTML + '"</strong>drop';
-						eleDrag.parentNode.removeChild(eleDrag);
+						if(Game.incircle!=-1){
+							Game.circles[Game.incircle].highlight=false;
+							Game.incircle=-1;
+							eleRemind.innerHTML = '<strong>"' + eleDrag.innerHTML + '"</strong>drop';
+							eleDrag.parentNode.removeChild(eleDrag);
+						}
 					}
 					this.style.color = "#000000";
 					return false;
